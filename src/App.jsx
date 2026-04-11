@@ -1,89 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Wardrobe from './pages/Wardrobe';
+import OccasionPage from './pages/OccasionPage';
 import Quiz from './pages/Quiz';
 import Results from './pages/Results';
-import { userWardrobe } from './core/wardrobDB';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
-
-  // 🧠 الذاكرة: هل يوجد مستخدم مسجل دخول مسبقاً؟
-  const [currentUser, setCurrentUser] = useState(localStorage.getItem('eva_user_email') || null);
+  const [currentUser, setCurrentUser] = useState(localStorage.getItem('eva_user_email') || 'User');
   const [clothes, setClothes] = useState([]);
+  const [userAnswers, setUserAnswers] = useState({});
 
-  // عند تسجيل الدخول
-  const handleLogin = (email) => {
-    setCurrentUser(email);
-    localStorage.setItem('eva_user_email', email); // حفظ الإيميل في المتصفح
-    setCurrentPage('wardrobe');
-  };
-
-  // عند تسجيل الخروج
-  const handleLogout = () => {
-    setCurrentUser(null);
-    localStorage.removeItem('eva_user_email');
-    setClothes([]); // تصفير الخزانة فوراً
-    setCurrentPage('home');
-  };
-
-  // 🧠 جلب الملابس الخاصة بهذا الإيميل بالتحديد عند الدخول
-  useEffect(() => {
-    if (currentUser) {
-      const savedClothes = localStorage.getItem(`eva_wardrobe_${currentUser}`);
-      if (savedClothes) {
-        setClothes(JSON.parse(savedClothes)); // جلب ملابسه المحفوظة
-      } else {
-        setClothes(userWardrobe); // إذا كان جديداً، نعطيه الملابس الافتراضية
-      }
-    }
-  }, [currentUser]);
-
-  // 🧠 حفظ الملابس في المتصفح كلما أضاف أو حذف قطعة (مربوطة بإيميله)
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem(`eva_wardrobe_${currentUser}`, JSON.stringify(clothes));
-    }
-  }, [clothes, currentUser]);
+  // 🌟 الإضافة الجديدة: ذاكرة لحفظ الأطقم المكتملة 🌟
+  const [savedOutfits, setSavedOutfits] = useState([]);
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] font-sans">
 
-      {/* إذا كان مسجلاً الدخول مسبقاً، زر الرئيسية ينقله للخزانة مباشرة */}
-      {currentPage === 'home' && (
-        <Home goToLogin={() => currentUser ? setCurrentPage('wardrobe') : setCurrentPage('login')} />
-      )}
+      {currentPage === 'home' && <Home goToLogin={() => setCurrentPage('login')} />}
 
-      {currentPage === 'login' && (
-        <Login onLogin={handleLogin} />
-      )}
+      {currentPage === 'login' && <Login onLogin={() => { setCurrentPage('wardrobe'); }} />}
 
       {currentPage === 'wardrobe' && (
         <Wardrobe
-          clothes={clothes}
-          setClothes={setClothes}
-          currentUser={currentUser} // إرسال الإيميل للخزانة لعرضه
-          onLogout={handleLogout}   // إرسال أمر الخروج
-          goToQuiz={() => setCurrentPage('quiz')}
+          clothes={clothes} setClothes={setClothes}
+          savedOutfits={savedOutfits} setSavedOutfits={setSavedOutfits} // تمرير الذاكرة للخزانة
+          goToQuiz={() => setCurrentPage('occasionPage')}
           goBackToHome={() => setCurrentPage('home')}
+          currentUser={currentUser}
+          onLogout={() => setCurrentPage('home')}
+        />
+      )}
+
+      {currentPage === 'occasionPage' && (
+        <OccasionPage
+          onContinue={(selections) => {
+            setUserAnswers(prev => ({ ...prev, ...selections }));
+            setCurrentPage('quiz');
+          }}
         />
       )}
 
       {currentPage === 'quiz' && (
         <Quiz
           goBackToWardrobe={() => setCurrentPage('wardrobe')}
-          goToResults={() => setCurrentPage('results')}
+          onFinish={(quizAnswers) => {
+            setUserAnswers(prev => ({ ...prev, ...quizAnswers }));
+            setCurrentPage('results');
+          }}
         />
       )}
 
       {currentPage === 'results' && (
         <Results
           clothes={clothes}
-          goBackToHome={() => setCurrentPage('home')}
-          goBackToQuiz={() => setCurrentPage('quiz')}
+          userAnswers={userAnswers}
+          savedOutfits={savedOutfits} setSavedOutfits={setSavedOutfits} // تمرير الذاكرة للنتائج
+          goBackToHome={() => setCurrentPage('wardrobe')}
         />
+      )}
+
+      {currentPage === 'admin' && <AdminLogin onLoginSuccess={() => setCurrentPage('admin-dashboard')} />}
+      {currentPage === 'admin-dashboard' && <AdminDashboard onLogout={() => setCurrentPage('home')} />}
+
+      {currentPage === 'home' && (
+        <button onClick={() => setCurrentPage('admin')} style={adminBtnStyle}>⚙️ Admin Portal</button>
       )}
     </div>
   );
 }
+
+const adminBtnStyle = { position: 'fixed', bottom: '15px', right: '15px', opacity: 0.7, fontSize: '12px', backgroundColor: '#FFF', padding: '8px 15px', borderRadius: '10px', border: '1px solid #DDD', color: '#333', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.05)', fontWeight: 'bold' };
