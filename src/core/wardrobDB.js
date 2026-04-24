@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Safe and Fast Compressor
 const quickCompress = (base64) => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -35,44 +34,48 @@ export const analyzeAndAddItem = async (base64Image, clothes, setClothes, detect
     const smallImage = await quickCompress(base64Image);
     const cleanBase64 = smallImage.split('base64,')[1];
 
-    let detectedClass = "Top/Shirt"; // القيمة الافتراضية الذكية
+    let detectedClass = "Unrecognized Item";
     let isRealAPI = false;
 
-    // محاولة الاتصال بالذكاء الاصطناعي
     try {
       const response = await axios({
         method: "POST",
-        url: "https://serverless.roboflow.com/sana200/workflows/general-segmentation-api",
-        headers: { "Content-Type": "application/json" },
-        data: {
-          api_key: "uwzidgEyxzOjJUnvKAkJ",
-          inputs: { image: { type: "base64", value: cleanBase64 } }
+        // عدنا للموديل القديم الأذكى مع الرابط الآمن
+        url: "https://detect.roboflow.com/clothes-classification-2/1",
+        params: {
+          api_key: "Fc6ezD8TG9nkKlAzdfh5" // مفتاح الموديل القديم
+        },
+        data: cleanBase64,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
         }
       });
 
-      const responseData = response.data;
-      let predictions = [];
-
-      if (responseData.predictions) predictions = responseData.predictions;
-      else if (responseData.outputs && responseData.outputs.length > 0) predictions = responseData.outputs[0].predictions || [];
-      else if (Array.isArray(responseData) && responseData[0]?.predictions) predictions = responseData[0].predictions;
+      const predictions = response.data.predictions;
+      console.log("🤖 Roboflow Brain Analysis:", predictions);
 
       if (predictions && predictions.length > 0) {
-        detectedClass = predictions[0].class || predictions[0].predicted_class || "Shirt";
-        isRealAPI = true;
+        const bestMatch = predictions.reduce((prev, current) => (prev.confidence > current.confidence) ? prev : current);
+        console.log(`Top Prediction: ${bestMatch.class} (Confidence: ${(bestMatch.confidence * 100).toFixed(1)}%)`);
+
+        // النظام الدفاعي: قبول النتيجة فقط إذا كانت الثقة أعلى من 60%
+        if (bestMatch.confidence > 0.60) {
+          detectedClass = bestMatch.class;
+          isRealAPI = true;
+        } else {
+          console.warn("AI confidence is too low. Rejected prediction.");
+        }
       }
     } catch (apiError) {
-      // هنا السحر! إذا فشل السيرفر، سيكتب الخطأ في الكونسول بصمت ويكمل العمل
-      console.warn("Roboflow API unavailable. Using Smart Fallback to protect UI.", apiError.message);
+      console.warn("Roboflow API unavailable.", apiError.message);
     }
 
-    // تصنيف القطعة بناءً على النتيجة أو القيمة الافتراضية
     let mappedCategory = "Top";
     const dClass = String(detectedClass).toLowerCase();
 
     if (dClass.includes("pant") || dClass.includes("skirt") || dClass.includes("short") || dClass.includes("jeans")) {
       mappedCategory = "Bottom";
-    } else if (dClass.includes("jacket") || dClass.includes("coat")) {
+    } else if (dClass.includes("jacket") || dClass.includes("coat") || dClass.includes("outer")) {
       mappedCategory = "Layer";
     } else if (dClass.includes("dress")) {
       mappedCategory = "Dress";
@@ -82,21 +85,19 @@ export const analyzeAndAddItem = async (base64Image, clothes, setClothes, detect
 
     const newItem = {
       id: Date.now().toString(),
-      name: `AI Detected: ${detectedClass}`,
+      name: isRealAPI ? `AI Detected: ${detectedClass}` : "Manual Edit Needed",
       category: mappedCategory,
       color: detectedColor,
       wearCount: 0,
       imageUrl: finalDisplayImage
     };
 
-    // حفظ القطعة في الخزانة
     setClothes(prev => [newItem, ...prev]);
 
-    // رسالة نجاح مريحة للمستخدم
     if (isRealAPI) {
       alert(`Success! AI detected: ${detectedClass}`);
     } else {
-      alert("Item added successfully to your wardrobe! ✨");
+      alert("Item added! AI was unsure, please edit details later.");
     }
 
   } catch (error) {
