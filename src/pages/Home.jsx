@@ -3,7 +3,7 @@ import { BrainCircuit, Leaf, Sparkles, ArrowRight, ScanSearch, Wand2, Layers3, S
 
 export default function Home({ goToLogin }) {
 
-  // خريطة مسار المستخدم لتكون في أعلى الصفحة (مثل بوابة الجامعة)
+
   const topNavigationSteps = [
     { id: 1, title: 'Digital Wardrobe', icon: '📱' },
     { id: 2, title: 'Occasion & Weather', icon: '📅' },
@@ -14,33 +14,31 @@ export default function Home({ goToLogin }) {
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-gray-800 font-sans p-6 relative overflow-hidden flex flex-col justify-center items-center">
 
-      {/* تأثيرات خلفية ديناميكية */}
+
       <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-[#EAE4D8]/50 to-transparent -z-10 animate-fade-in-slow"></div>
 
       <div className="max-w-7xl mx-auto w-full pt-8 pb-24 text-center animate-fade-in flex flex-col items-center">
 
-        {/* ========================================== */}
-        {/* 🌟 الشريط العلوي الجديد (Top Navigation Bar) فوق العنوان 🌟 */}
-        {/* ========================================== */}
+
         <div className="flex flex-wrap justify-center items-center gap-4 md:gap-12 w-full mb-16 px-4 border-b border-gray-200/50 pb-8">
           {topNavigationSteps.map((step, index) => (
             <div key={step.id} className="flex items-center gap-4 md:gap-12">
               <button
-                onClick={goToLogin} // محمي: يوجه لتسجيل الدخول
+                onClick={goToLogin}
                 className="flex flex-col items-center gap-3 group cursor-pointer"
               >
-                {/* الأيقونة داخل إطار دائري أنيق */}
+
                 <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center shadow-sm border border-gray-100 group-hover:border-gray-800 group-hover:shadow-md transition-all duration-300 transform group-hover:-translate-y-1">
                   <span className="text-2xl">{step.icon}</span>
                 </div>
-                {/* النص مع أيقونة قفل صغيرة لتدل على أنها تحتاج تسجيل دخول */}
+
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">{step.title}</span>
                   <Lock size={12} className="text-gray-400 group-hover:text-gray-700" />
                 </div>
               </button>
 
-              {/* السهم الفاصل بين الخطوات */}
+
               {index < topNavigationSteps.length - 1 && (
                 <span className="text-gray-300 hidden md:block">
                   <ArrowRight size={24} className="opacity-50" />
